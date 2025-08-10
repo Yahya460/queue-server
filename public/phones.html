@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>روابط الفاحصين (هواتف)</title>
+<style>
+  body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f8fafc;color:#0f172a}
+  .wrap{max-width:820px;margin:24px auto;padding:16px}
+  .card{border:1px solid #e2e8f0;border-radius:12px;padding:16px;background:#fff;box-shadow:0 10px 24px rgba(0,0,0,.05);margin-bottom:16px}
+  h1{margin:0 0 12px}
+  .row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+  .link{font-weight:800;word-break:break-all}
+  button{padding:8px 12px;border:none;border-radius:10px;background:#10b981;color:#fff;font-weight:800;cursor:pointer}
+  .muted{color:#64748b}
+  code{background:#f1f5f9;padding:2px 6px;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>روابط الفاحصين (شاركها مع الفاحصين)</h1>
+  <div id="list"></div>
+  <div class="card">
+    <h3>تعليمات سريعة</h3>
+    <ol>
+      <li>تأكد أن جوال الفاحص على نفس الشبكة (Wi‑Fi) الخاصة بالجهاز الخادم.</li>
+      <li>شارك أحد الروابط أعلاه. عند الفتح، يكتب الفاحص اسمه وكود الفاحص (EXAM_CODE).</li>
+      <li>لإضافة الصفحة كأيقونة على الشاشة الرئيسية في الجوال: من قائمة المتصفح اختر <b>Add to Home Screen</b>.</li>
+    </ol>
+    <p class="muted">يمكنك تغيير المنفذ/الكود من ملف <code>.env</code> ثم إعادة تشغيل الخادم.</p>
+  </div>
+</div>
+<script>
+(async function(){
+  const box = document.getElementById('list');
+  try {
+    const res = await fetch('/api/ips'); const data = await res.json();
+    const ips = data.ips || []; const port = data.port || 3000;
+    if (!ips.length) { box.innerHTML = '<div class="card">لم أجد عناوين شبكة، تأكد من اتصال الجهاز بالشبكة.</div>'; return; }
+    box.innerHTML = ips.map(ip => {
+      const url = `http://${ip}:${port}/exam`;
+      return `<div class="card row"><div class="link">${url}</div><button onclick="navigator.clipboard.writeText('${url}')">نسخ الرابط</button></div>`;
+    }).join('');
+  } catch(e) {
+    box.innerHTML = '<div class="card">تعذّر جلب الروابط. شغّل الخادم أولاً.</div>';
+  }
+})();
+</script>
+</body>
+</html>

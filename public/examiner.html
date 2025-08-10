@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>واجهة الفاحص — خادم الشبكة (Plus)</title>
+<style>
+  body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#ffffff;color:#0f172a}
+  .wrap{max-width:920px;margin:24px auto;padding:16px}
+  h1{margin:0 0 12px}
+  .card{border:1px solid #e2e8f0;border-radius:12px;padding:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);margin-bottom:16px}
+  label{display:block;font-weight:700;margin-top:10px}
+  input,select,button,textarea{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font-size:18px}
+  textarea{min-height:84px}
+  button{background:#0ea5e9;color:#fff;font-weight:900;border:none;cursor:pointer;margin-top:14px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .muted{color:#64748b;font-size:14px}
+  .ok{background:#10b981;margin-top:0}
+  .danger{background:#ef4444}
+  .status{padding:10px 12px;border-radius:10px;margin-bottom:10px;font-weight:700}
+  .status.ok{background:#ecfeff;border:1px solid #06b6d4;color:#0e7490}
+  .status.err{background:#fef2f2;border:1px solid #ef4444;color:#991b1b}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>واجهة الفاحص — خادم الشبكة</h1>
+    <div id="status" class="status ok" style="display:none">جاهز</div>
+
+    <div class="card">
+      <h3>تعريف الفاحص</h3>
+      <div class="row">
+        <div><label>اسم الفاحص</label><input id="examinerName" type="text" placeholder="مثال: يحيى"></div>
+        <div><label>كود الفاحص (من المدير)</label><input id="examCode" type="password" placeholder="مثال: 1234"></div>
+      </div>
+      <button id="btnSaveProfile" class="ok">حفظ</button>
+      <p class="muted">يُستخدم الاسم لتوقيع الملاحظات، والكود للتحقق من الصلاحية.</p>
+    </div>
+
+    <div class="card">
+      <h3>نداء تلميذ</h3>
+      <div class="row">
+        <div><label>النوع</label>
+          <select id="selGender"><option value="men">رجال / MEN</option><option value="women">نساء / WOMEN</option></select>
+        </div>
+        <div><label>رقم اللجنة</label><input id="inpCommittee" type="number" placeholder="مثال: 3"></div>
+      </div>
+      <div class="row">
+        <div><label>رقم التلميذ</label><input id="inpStudent" type="number" placeholder="مثال: 7"></div>
+        <div><label>&nbsp;</label></div>
+      </div>
+      <button id="btnCall">نداء</button>
+      <button id="btnClear" class="danger">مسح القوائم</button>
+    </div>
+
+    <div class="card">
+      <h3>حالات الغياب (أرقام فقط)</h3>
+      <div class="row">
+        <div><label>النوع</label>
+          <select id="absGender"><option value="men">رجال / MEN</option><option value="women">نساء / WOMEN</option></select>
+        </div>
+        <div><label>رقم الغياب</label><input id="absNumber" type="number" placeholder="مثال: 12" min="0" step="1"></div>
+      </div>
+      <div class="row">
+        <div><button id="btnAbsAdd" class="ok">إضافة رقم غياب</button></div>
+        <div>
+          <label>مسح رقم محدد</label>
+          <div class="row" style="grid-template-columns:1fr 1fr;gap:8px;margin:0;padding:0">
+            <select id="absGenderDel"><option value="men">رجال</option><option value="women">نساء</option></select>
+            <input id="absNumberDel" type="number" placeholder="الرقم" min="0" step="1">
+          </div>
+          <button id="btnAbsRemove" class="danger">مسح الرقم</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>إرسال ملاحظة</h3>
+      <label>الملاحظة (تظهر للمراجعين وتتحرك أسفل "الغياب")</label>
+      <textarea id="noteText" placeholder="اكتب الملاحظة هنا..."></textarea>
+      <div class="actions"><button id="btnNoteSend" class="ok">إرسال الملاحظة</button></div>
+    </div>
+
+  </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function(){{
+  const $=id=>document.getElementById(id);
+  const setStatus=(t,type='ok')=>{{ const el=$('status'); el.textContent=t; el.className='status '+(type==='ok'?'ok':'err'); el.style.display='block'; }};
+  const socket = io();
+
+  function getProfile(){{
+    return {{ name: localStorage.getItem('examiner_name')||'', code: localStorage.getItem('exam_code')||'' }};
+  }}
+  function saveProfile(name, code){{
+    localStorage.setItem('examiner_name', name||'');
+    localStorage.setItem('exam_code', code||'');
+  }}
+
+  $('btnSaveProfile').onclick=function(){{
+    const nm=$('examinerName').value.trim(), cd=$('examCode').value.trim();
+    if(!nm||!cd){{ setStatus('أدخل الاسم والكود','err'); return; }}
+    saveProfile(nm,cd); setStatus('تم الحفظ','ok');
+  }};
+
+  $('btnCall').onclick=function(){{
+    const prof=getProfile(); if(!prof.name || !prof.code){{ setStatus('أدخل الاسم والكود ثم احفظ','err'); return; }}
+    const g=$('selGender').value, s=parseInt(($('inpStudent').value||'').trim(),10), c=parseInt(($('inpCommittee').value||'').trim(),10);
+    if(!s||!c){{ setStatus('أدخل رقم التلميذ واللجنة','err'); return; }}
+    socket.emit('exam:call',{{ gender:g, student:s, committee:c, code:prof.code }});
+    setStatus('تم إرسال النداء','ok');
+  }};
+  $('btnClear').onclick=function(){{
+    const prof=getProfile(); if(!prof.code){{ setStatus('أدخل الكود ثم احفظ','err'); return; }}
+    socket.emit('exam:clear',{{ code:prof.code }});
+    setStatus('تم مسح القوائم','ok');
+  }};
+  $('btnAbsAdd').onclick=function(){{
+    const prof=getProfile(); if(!prof.code){{ setStatus('أدخل الكود ثم احفظ','err'); return; }}
+    const g=$('absGender').value, n=parseInt(($('absNumber').value||'').trim(),10);
+    if(Number.isNaN(n)){{ setStatus('أدخل رقم الغياب','err'); return; }}
+    socket.emit('exam:abs_add',{{ gender:g, number:n, code:prof.code }});
+    $('absNumber').value=''; setStatus('أضيف رقم الغياب','ok');
+  }};
+  $('btnAbsRemove').onclick=function(){{
+    const prof=getProfile(); if(!prof.code){{ setStatus('أدخل الكود ثم احفظ','err'); return; }}
+    const g=$('absGenderDel').value, n=parseInt(($('absNumberDel').value||'').trim(),10);
+    if(Number.isNaN(n)){{ setStatus('أدخل الرقم لمسحه','err'); return; }}
+    socket.emit('exam:abs_remove',{{ gender:g, number:n, code:prof.code }});
+    $('absNumberDel').value=''; setStatus('تم مسح الرقم','ok');
+  }};
+  $('btnNoteSend').onclick=function(){{
+    const prof=getProfile(); if(!prof.name || !prof.code){{ setStatus('أدخل الاسم والكود ثم احفظ','err'); return; }}
+    const t=($('noteText').value||'').trim(); if(!t){{ setStatus('أدخل الملاحظة','err'); return; }}
+    socket.emit('exam:note_add',{{ text:t, author:prof.name, role:'examiner', code:prof.code }});
+    $('noteText').value=''; setStatus('تم إرسال الملاحظة','ok');
+  }};
+
+  // تهيئة الحقول من التخزين
+  window.addEventListener('load', function(){{
+    const prof=getProfile(); $('examinerName').value=prof.name; $('examCode').value=prof.code;
+  }});
+}})();
+</script>
+</body>
+</html>
