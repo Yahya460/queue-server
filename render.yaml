@@ -1,0 +1,14 @@
+# render.yaml — نشر سريع على Render.com
+services:
+  - type: web
+    name: queue-server
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    autoDeploy: true
+    envVars:
+      - key: EXAM_CODE
+        value: "1234"
+      - key: PORT
+        value: "3000"
