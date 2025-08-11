@@ -10,13 +10,26 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
+// كود التفويض (من Environment في Render)
 const EXAM_CODE = process.env.EXAM_CODE || '1234';
 
+// يقدم مجلد public كملفات ثابتة
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ---------------------- أدوات مساعدة ----------------------
+// مسارات مختصرة للصفحات (عشان /display و /exam تشتغل)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'display.html'));
+});
+app.get('/display', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'display.html'));
+});
+app.get('/exam', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'examiner.html'));
+});
+
+// --------------------------------- أدوات مساعدة ---------------------------------
 function normGender(g) {
-  // توحيد النوع: يقبل MEN/رجال/WOMEN/نساء... الخ
+  // توحيد النوع: يقبل MEN/رجال/WOMEN/نساء ويحوّلها لقيم قياسية
   g = (g || '').toString().trim().toUpperCase();
   if (g.includes('WOM') || g.includes('نس')) return 'WOMEN';
   return 'MEN';
@@ -26,7 +39,7 @@ function toInt(v, def = 0) {
   return Number.isFinite(n) ? n : def;
 }
 
-// ---------------------- سـوكِت ----------------------
+// --------------------------------- Socket.IO ---------------------------------
 io.on('connection', (socket) => {
   console.log('socket connected', socket.id);
 
@@ -44,9 +57,10 @@ io.on('connection', (socket) => {
       if (!student || !committee) return;
 
       const msg = { gender, student, committee, at: Date.now() };
+
       // البث لشاشة العرض
-      io.emit('exam:called', msg);        // عام (تستخدمه الشاشة للتحديث + النغمة)
-      io.emit(`exam:called:${gender}`, msg); // فردي حسب النوع (احتياطي لو الشاشة تفصل)
+      io.emit('exam:called', msg);           // عام
+      io.emit(`exam:called:${gender}`, msg); // حسب النوع (احتياطي)
 
       console.log('CALL:', msg);
     } catch (e) {
@@ -94,7 +108,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// ---------------------- تشغيل ----------------------
+// --------------------------------- تشغيل ---------------------------------
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
   console.log(`Queue server running on http://localhost:${PORT}`);
