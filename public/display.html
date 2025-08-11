@@ -3,306 +3,133 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>شاشة العرض — نظام الدور</title>
+<title>شاشة العرض</title>
 <style>
 :root{
-  --sky:#e5f3ff;
-  --bar:#0b5ed7;
-  --yellow:#f9e79f;
-  --accent:#b91c1c; /* أحمر */
-  --panel:#ffffff;
-  --ink:#111;
-  --muted:#666;
-  --line:#d7e6f7;
+  --bg:#eaf2fb; --panel:#fff; --bar:#0b5ed7; --accent:#e11; --text:#111;
+  --muted:#6c757d; --shadow:0 6px 20px rgba(0,0,0,.06);
 }
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:"Segoe UI",Arial,sans-serif;
-  background:var(--sky);
-  color:var(--ink);
-}
-
-/* شريط علوي */
-.topbar{
-  background:var(--bar);
-  color:#fff;
-  text-align:center;
-  padding:.6rem .8rem;
-  font-weight:600;
-  position:sticky;top:0;z-index:3;
-}
-.topbar small{font-weight:400;opacity:.9}
-
-/* تخطيط 3 أعمدة */
-.container{
-  display:grid;
-  grid-template-columns: 260px 1fr 260px;
-  gap:14px;
-  padding:14px;
-  max-width:1200px;
-  margin:auto;
-}
-@media(max-width:1000px){
-  .container{grid-template-columns: 1fr; }
-}
-
-/* لوح جانبي */
-.side{
-  background:#fff;
-  border:1px solid var(--line);
-  border-radius:10px;
-  overflow:hidden;
-  display:flex;flex-direction:column;
-  min-height:540px;
-}
-.side h3{
-  margin:0;
-  padding:10px 12px;
-  background:#fff;
-  border-bottom:1px solid var(--line);
-  font-size:18px;
-}
-.list{
-  flex:1; padding:10px; overflow:auto;
-}
-.item{
-  display:flex; justify-content:space-between; align-items:center;
-  padding:8px 10px; margin-bottom:6px;
-  border:1px solid var(--line); border-radius:6px; background:#fff;
-  font-weight:600;
-}
-.item .code{font-weight:800; font-size:18px}
-.item .meta{color:var(--muted); font-size:13px}
-
-/* اللوح الأوسط */
-.center{
-  background:#fff;border:1px solid var(--line);
-  border-radius:10px; overflow:hidden; min-height:540px;
-  display:flex; flex-direction:column; align-items:center;
-}
-.center .head{
-  width:100%; padding:12px 16px; border-bottom:1px solid var(--line);
-  display:flex; justify-content:space-between; align-items:center;
-}
-.statusDot{position:fixed;left:10px;bottom:10px;background:#444;color:#fff;
-  padding:6px 10px;border-radius:6px;font-size:12px;opacity:.9}
-
-/* الرسالة والرقم الكبير */
-.msg{
-  padding:12px 16px; width:100%;
-  display:flex; justify-content:space-between; align-items:flex-start;
-  color:#111; font-weight:700;
-}
-.msg .en{font-weight:600}
-
-.big{
-  margin-top:10px; text-align:center; flex:1;
-  width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
-}
-.barRed{width:160px;height:10px;background:var(--accent);border-radius:6px;margin:10px auto 16px}
-#bigNum{font-size:120px; font-weight:900; letter-spacing:2px; line-height:1}
-.center h1{margin:0 0 6px 0; font-size:34px}
-.gLabel{color:var(--accent); font-weight:800; margin-top:4px}
-
-/* الغياب والملاحظة */
-.band{
-  width:100%; background:#fff4cc; border-top:1px solid var(--line);
-  padding:8px 12px; text-align:center; font-weight:700;
-}
-.marquee{
-  width:100%; overflow:hidden; white-space:nowrap; border-top:1px solid var(--line);
-  background:#fff; padding:8px 0;
-}
-.marquee > div{
-  display:inline-block; padding-right:100%;
-  animation:scroll 18s linear infinite;
-}
-@keyframes scroll{
-  from{transform:translateX(0)}
-  to{transform:translateX(-100%)}
-}
-
-/* ألوان عناوين القوائم */
-.tagMen{color:#0a7}
-.tagWom{color:#a06}
+body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text)}
+.top{background:var(--bar);color:#fff;text-align:center;padding:8px 10px;font-weight:700}
+.container{display:grid;grid-template-columns:280px 1fr 280px;gap:20px;max-width:1200px;margin:18px auto;padding:0 12px}
+.panel{background:var(--panel);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+.panel h3{margin:0;padding:14px 14px;background:#f7f7f7;border-bottom:1px solid #eee;font-size:16px}
+.list{padding:10px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;justify-content:space-between;align-items:center;border:1px solid #eee;border-radius:8px;padding:10px 12px;background:#fff}
+.row small{color:var(--muted)}
+.row .num{font-weight:800;color:var(--bar)}
+.center{background:#fff;border-radius:10px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center}
+.center .tit{width:100%;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #eee;color:#333}
+.big{font-size:120px;font-weight:900;letter-spacing:4px;margin:40px 0 0}
+.line{width:150px;height:10px;border-radius:6px;background:var(--accent);margin:28px auto}
+.committee{font-size:36px;font-weight:800;margin:10px auto}
+.gender{font-size:18px;color:var(--accent)}
+.notice{margin:18px auto 0;width:100%;background:#fff3cd;border:1px solid #ffe69c;border-radius:8px;padding:10px;text-align:center;position:relative;overflow:hidden}
+.marquee{display:inline-block;white-space:nowrap;animation:mar 15s linear infinite}
+@keyframes mar{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+.badge{display:inline-block;background:#d1e7dd;color:#0a3622;border:1px solid #a3cfbb;border-radius:999px;padding:1px 10px;font-weight:700}
+.off{position:fixed;left:10px;bottom:10px;background:#198754;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px}
 </style>
 </head>
 <body>
-
-<div class="topbar">
-  شاشة العرض <b>(PLUS)</b> — يُرجى تفعيل الصوت بنقرة واحدة داخل الصفحة <small>— ثم إبقاء الصفحة مفتوحة</small>
-</div>
+<div class="top">شاشة العرض — يُرجى تفعيل الصوت بنقرة واحدة داخل الصفحة</div>
 
 <div class="container">
-
-  <!-- قائمة رجال -->
-  <div class="side">
-    <h3> MEN / رجال — <span class="tagMen">تم النداء</span> </h3>
-    <div id="menList" class="list"></div>
+  <div class="panel">
+    <h3>تم النداء — نساء / WOMEN</h3>
+    <div id="listW" class="list"></div>
   </div>
 
-  <!-- اللوح الأوسط -->
-  <div class="center" id="page">
-    <div class="head">
-      <div class="ar">يرجى التوجه لمنطقة الاختبار</div>
-      <div class="en">Please proceed to the examination area</div>
+  <div class="center panel">
+    <div class="tit">
+      <span>يرجى التوجه لمنطقة الاختبار</span>
+      <span class="badge">Please proceed to the examination area</span>
     </div>
+    <div class="line"></div>
+    <div id="big" class="big">—</div>
+    <div class="committee">— اللجنة —</div>
+    <div id="gen" class="gender">—</div>
 
-    <div class="big">
-      <div class="barRed"></div>
-      <div id="bigNum">—</div>
-      <h1>— اللجنة —</h1>
-      <div id="gLabel" class="gLabel">—</div>
-    </div>
-
-    <div class="band" id="absBand">
-      الغياب بـرجال: لا يوجد — الغياب نساء: لا يوجد
-    </div>
-
-    <div class="marquee">
-      <div id="noteTicker">لا توجد ملاحظات…</div>
+    <div class="notice">
+      <span id="absText">الغياب برجال: لا يوجد — الغياب بنساء: لا يوجد</span>
+      <span id="noteText" class="marquee"></span>
     </div>
   </div>
 
-  <!-- قائمة نساء -->
-  <div class="side">
-    <h3> WOMEN / نساء — <span class="tagWom">تم النداء</span> </h3>
-    <div id="womList" class="list"></div>
+  <div class="panel">
+    <h3>تم النداء — رجال / MEN</h3>
+    <div id="listM" class="list"></div>
   </div>
-
 </div>
 
-<div id="conn" class="statusDot">متصل بالخادم</div>
+<div class="off" id="status">متصل بالخادم</div>
 
-<!-- أصوات -->
-<audio id="audMen"></audio>
-<audio id="audWom"></audio>
+<audio id="audMen"   preload="none" src="men.mp3"></audio>
+<audio id="audWomen" preload="none" src="women.mp3"></audio>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-(function(){
-  const $ = s=>document.querySelector(s);
-  const pad = n => String(n).padStart(3,'0');
+const $  = s => document.querySelector(s);
+const mk = (t,cls='') => { const e=document.createElement(t); if(cls)e.className=cls; return e };
 
-  const menList = $('#menList');
-  const womList = $('#womList');
-  const bigNum = $('#bigNum');
-  const gLabel = $('#gLabel');
-  const absBand = $('#absBand');
-  const noteTicker = $('#noteTicker');
-  const conn = $('#conn');
+let men=[], women=[];
+const socket = io();
 
-  // قوائم العرض (آخر 12 نداء)
-  const lastMen = [];
-  const lastWom = [];
-  const MAX = 12;
+// Unlock audio by click once
+document.body.addEventListener('click', ()=>{ $('#audMen').play().catch(()=>{}); $('#audWomen').play().catch(()=>{}); }, {once:true});
 
-  // الغياب
-  let absMen = [];
-  let absWom = [];
-
-  // الأصوات: إن وُجدت ملفات، ضع المسارات هنا:
-  // $('#audMen').src = '/sounds/men.mp3';
-  // $('#audWom').src = '/sounds/women.mp3';
-
-  // بديل صوتي بسيط عند عدم وجود ملفات
-  function toneShort(freq=880){
-    try{
-      const ctx = new (window.AudioContext||window.webkitAudioContext)();
-      const o = ctx.createOscillator(); const g = ctx.createGain();
-      o.type='sine'; o.frequency.value=freq;
-      o.connect(g); g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.0001, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
-      o.start(); o.stop(ctx.currentTime + 0.36);
-    }catch(e){}
-  }
-  function playMen(){ const a=$('#audMen'); if(a.src) { a.currentTime=0; a.play().catch(()=>{}); } else { toneShort(700); } }
-  function playWom(){ const a=$('#audWom'); if(a.src) { a.currentTime=0; a.play().catch(()=>{}); } else { toneShort(950); } }
-
-  function renderLists(){
-    menList.innerHTML = lastMen.map(x=>(
-      `<div class="item"><span class="code">${x.code}</span><span class="meta">رجال · اللجنة ${x.c}</span></div>`
-    )).join('');
-    womList.innerHTML = lastWom.map(x=>(
-      `<div class="item"><span class="code">${x.code}</span><span class="meta">نساء · اللجنة ${x.c}</span></div>`
-    )).join('');
-  }
-
-  function renderAbs(){
-    const m = absMen.length ? absMen.join('، ') : 'لا يوجد';
-    const w = absWom.length ? absWom.join('، ') : 'لا يوجد';
-    absBand.textContent = `الغياب بـرجال: ${m} — الغياب نساء: ${w}`;
-  }
-
-  // سوكِت
-  const socket = io();
-
-  socket.on('connect', ()=>{ conn.textContent='متصل بالخادم'; conn.style.background='#2e7d32'; });
-  socket.on('disconnect', ()=>{ conn.textContent='انقطع الاتصال'; conn.style.background='#c62828'; });
-
-  // حدث النداء من السيرفر
-  socket.on('exam:called', (p)=>{
-    // p = { gender:'MEN'|'WOMEN', student:number, committee:number }
-    const isMen = (String(p.gender||'').toUpperCase() === 'MEN');
-    const prefix = isMen ? 'A' : 'C';
-    const code = `${prefix}${pad(p.student||0)}`;
-    bigNum.textContent = code;
-    gLabel.textContent = isMen ? 'رجال' : 'نساء';
-
-    // حدّث القوائم
-    const entry = { code, c: p.committee||'-' };
-    if(isMen){
-      lastMen.unshift(entry);
-      if(lastMen.length>MAX) lastMen.pop();
-      playMen();
-    } else {
-      lastWom.unshift(entry);
-      if(lastWom.length>MAX) lastWom.pop();
-      playWom();
-    }
-    renderLists();
+function renderLists(){
+  const lw = $('#listW'), lm = $('#listM');
+  lw.innerHTML = ''; lm.innerHTML = '';
+  women.slice().reverse().forEach(x=>{
+    const r=mk('div','row');
+    r.innerHTML = `<small>اللجنة ${x.committee} · نساء</small><div class="num">${x.ticket}</div>`;
+    lw.appendChild(r);
   });
-
-  // مسح الرقم الكبير (لا نمسح القوائم)
-  socket.on('exam:clear', ()=>{
-    bigNum.textContent = '—';
-    gLabel.textContent = '—';
+  men.slice().reverse().forEach(x=>{
+    const r=mk('div','row');
+    r.innerHTML = `<small>اللجنة ${x.committee} · رجال</small><div class="num">${x.ticket}</div>`;
+    lm.appendChild(r);
   });
+}
 
-  // ملاحظة
-  socket.on('exam:note', (p)=>{
-    const t = (p && p.text || '').trim();
-    noteTicker.textContent = t ? t : '—';
-  });
+function showCenter({ticket, committee, gender}){
+  $('#big').textContent = ticket || '—';
+  $('.committee').textContent = committee ? `اللجنة ${committee}` : '— اللجنة —';
+  $('#gen').textContent = (gender==='MEN') ? 'رجال' : (gender==='WOMEN' ? 'نساء' : '—');
+}
 
-  // الغياب
-  socket.on('exam:abs:add', (p)=>{
-    const g = (p.gender||'').toUpperCase();
-    const num = String(p.number||'').trim();
-    if(!num) return;
-    if(g==='MEN'){ if(!absMen.includes(num)) absMen.push(num); }
-    else if(g==='WOMEN'){ if(!absWom.includes(num)) absWom.push(num); }
-    renderAbs();
-  });
+function renderAbs(data){
+  const men = (data?.MEN || []);
+  const women = (data?.WOMEN || []);
+  const a = men.length   ? men.join(' , ')   : 'لا يوجد';
+  const b = women.length ? women.join(' , ') : 'لا يوجد';
+  $('#absText').textContent = `الغياب برجال: ${a} — الغياب بنساء: ${b}`;
+}
 
-  socket.on('exam:abs:remove', (p)=>{
-    const g = (p.gender||'').toUpperCase();
-    const num = String(p.number||'').trim();
-    if(g==='MEN'){ absMen = absMen.filter(x=>x!==num); }
-    else if(g==='WOMEN'){ absWom = absWom.filter(x=>x!==num); }
-    renderAbs();
-  });
+function renderNote(t){
+  $('#noteText').textContent = (t && t.trim()) ? ` — ${t.trim()} — ` : '';
+}
 
-  // للتأكد من وصول الأحداث يمكنك فتح Console وسترى التالي:
-  socket.onAny((ev, ...a)=>{ /* console.log('[DISPLAY EV]', ev, ...a); */ });
+// ===== sockets =====
+socket.on('connect', ()=> $('#status').textContent='متصل بالخادم');
+socket.on('disconnect', ()=> $('#status').textContent='غير متصل');
 
-  // نقرة لتفعيل الصوت في بعض المتصفحات
-  document.addEventListener('click', ()=>{ try{ playMen(); }catch(e){} }, {once:true});
+socket.on('display:init', ({men:m, women:w, note, abs})=>{
+  men = m || []; women=w || [];
+  renderLists(); renderNote(note); renderAbs(abs);
+});
 
-})();
+socket.on('display:call', (p)=>{
+  if(p.gender==='MEN'){ men.push(p); if(men.length>12) men.shift(); $('#audMen').currentTime=0; $('#audMen').play().catch(()=>{}); }
+  else { women.push(p); if(women.length>12) women.shift(); $('#audWomen').currentTime=0; $('#audWomen').play().catch(()=>{}); }
+  renderLists(); showCenter(p);
+});
+
+socket.on('display:clear', ()=> showCenter({ticket:'—'}));
+socket.on('note:update', renderNote);
+socket.on('abs:update',  renderAbs);
 </script>
 </body>
 </html>
