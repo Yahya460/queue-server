@@ -1,126 +1,102 @@
-
-/* Queue Server (Express + Socket.IO) — Plus Edition
- * مزامنة شاشة العرض مع واجهات الفاحص عبر الشبكة/الإنترنت.
- */
-const os = require('os');
+// server.js
 const path = require('path');
-const fs = require('fs');
 const express = require('express');
 const http = require('http');
-const cors = require('cors');
 const { Server } = require('socket.io');
-require('dotenv').config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-
-const PORT = process.env.PORT || 3000;
-const EXAM_CODE = process.env.EXAM_CODE || '1234';
-const STATE_FILE = path.join(__dirname, 'state.json');
-
-// الحالة العامة
-const state = { men: [], women: [], absMen: [], absWomen: [], notes: [] };
-const MAX_ITEMS = 12;
-
-// تحميل حالة سابقة إن وجدت
-try {
-  if (fs.existsSync(STATE_FILE)) {
-    const data = JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8'));
-    Object.assign(state, data || {});
-  }
-} catch (e) { console.error('State load error:', e.message); }
-function persist() {
-  try { fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2)); } catch(e){}
-}
-
-// جمع عناوين الشبكة
-function getIPs() {
-  const nets = os.networkInterfaces();
-  const addrs = [];
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
-      if (net.family === 'IPv4' && !net.internal) addrs.push(net.address);
-    }
-  }
-  return addrs;
-}
-
-// خادم HTTP + Socket.IO
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*", methods: ["GET","POST"] } });
+const io = new Server(server, {
+  cors: { origin: '*' }
+});
 
+const EXAM_CODE = process.env.EXAM_CODE || '1234';
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ---------------------- أدوات مساعدة ----------------------
+function normGender(g) {
+  // توحيد النوع: يقبل MEN/رجال/WOMEN/نساء... الخ
+  g = (g || '').toString().trim().toUpperCase();
+  if (g.includes('WOM') || g.includes('نس')) return 'WOMEN';
+  return 'MEN';
+}
+function toInt(v, def = 0) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : def;
+}
+
+// ---------------------- سـوكِت ----------------------
 io.on('connection', (socket) => {
-  socket.emit('state', state);
+  console.log('socket connected', socket.id);
 
-  socket.on('exam:call', (payload) => {
-    if (!payload || payload.code !== EXAM_CODE) return;
-    const { gender, student, committee } = payload;
-    if (!student || !committee || !gender) return;
-    const rec = { gender, student: parseInt(student,10), committee: parseInt(committee,10), ts: Date.now() };
-    if (gender === 'men') { state.men.unshift(rec); state.men = state.men.slice(0, MAX_ITEMS); }
-    else { state.women.unshift(rec); state.women = state.women.slice(0, MAX_ITEMS); }
-    persist();
-    io.emit('state', state);
-    io.emit('play', { gender });
+  // نداء تلميذ
+  socket.on('exam:call', (payload = {}) => {
+    try {
+      const code = (payload.code || '').toString().trim();
+      if (code !== EXAM_CODE) {
+        console.log('call: invalid code');
+        return;
+      }
+      const gender = normGender(payload.gender);
+      const student = toInt(payload.student);
+      const committee = toInt(payload.committee);
+      if (!student || !committee) return;
+
+      const msg = { gender, student, committee, at: Date.now() };
+      // البث لشاشة العرض
+      io.emit('exam:called', msg);        // عام (تستخدمه الشاشة للتحديث + النغمة)
+      io.emit(`exam:called:${gender}`, msg); // فردي حسب النوع (احتياطي لو الشاشة تفصل)
+
+      console.log('CALL:', msg);
+    } catch (e) {
+      console.error('exam:call error', e);
+    }
   });
 
-  socket.on('exam:clear', (payload) => {
-    if (!payload || payload.code !== EXAM_CODE) return;
-    state.men = []; state.women = []; persist(); io.emit('state', state);
+  // مسح القوائم
+  socket.on('exam:clear', (payload = {}) => {
+    const code = (payload.code || '').toString().trim();
+    if (code !== EXAM_CODE) return;
+    io.emit('exam:clear');
+    console.log('CLEAR lists');
   });
 
-  socket.on('exam:abs_add', (payload) => {
-    if (!payload || payload.code !== EXAM_CODE) return;
-    const { gender, number } = payload;
-    const n = parseInt(number, 10); if (Number.isNaN(n)) return;
-    const arr = (gender === 'men') ? state.absMen : state.absWomen;
-    if (!arr.map(String).includes(String(n))) arr.push(n);
-    persist(); io.emit('state', state);
+  // الغياب - إضافة
+  socket.on('exam:abs:add', (payload = {}) => {
+    const code = (payload.code || '').toString().trim();
+    if (code !== EXAM_CODE) return;
+    const gender = normGender(payload.gender);
+    const number = toInt(payload.number);
+    if (!number) return;
+    io.emit('exam:abs', { action: 'add', gender, number, at: Date.now() });
+    console.log('ABS ADD:', gender, number);
   });
 
-  socket.on('exam:abs_remove', (payload) => {
-    if (!payload || payload.code !== EXAM_CODE) return;
-    const { gender, number } = payload;
-    const n = parseInt(number, 10); if (Number.isNaN(n)) return;
-    if (gender === 'men') state.absMen = state.absMen.filter(x => String(x) !== String(n));
-    else state.absWomen = state.absWomen.filter(x => String(x) !== String(n));
-    persist(); io.emit('state', state);
+  // الغياب - حذف
+  socket.on('exam:abs:remove', (payload = {}) => {
+    const code = (payload.code || '').toString().trim();
+    if (code !== EXAM_CODE) return;
+    const gender = normGender(payload.gender);
+    const number = toInt(payload.number);
+    if (!number) return;
+    io.emit('exam:abs', { action: 'remove', gender, number, at: Date.now() });
+    console.log('ABS REMOVE:', gender, number);
   });
 
-  socket.on('exam:note_add', (payload) => {
-    if (!payload || payload.code !== EXAM_CODE) return;
-    const { text, author, role } = payload;
-    const t = (text || '').trim(); if (!t) return;
-    state.notes.push({ text: t, author: author || '-', role: role || 'examiner', ts: Date.now() });
-    state.notes = state.notes.slice(-100);
-    persist(); io.emit('state', state);
-  });
-
-  socket.on('exam:note_remove', (payload) => {
-    if (!payload || payload.code !== EXAM_CODE) return;
-    const { ts } = payload || {};
-    state.notes = state.notes.filter(n => String(n.ts) !== String(ts));
-    persist(); io.emit('state', state);
-  });
-
-  socket.on('exam:note_clear_all', (payload) => {
-    if (!payload || payload.code !== EXAM_CODE) return;
-    state.notes = []; persist(); io.emit('state', state);
+  // إرسال ملاحظة
+  socket.on('exam:note', (payload = {}) => {
+    const code = (payload.code || '').toString().trim();
+    if (code !== EXAM_CODE) return;
+    const text = (payload.text || '').toString().trim();
+    io.emit('exam:note', { text, at: Date.now() });
+    console.log('NOTE:', text);
   });
 });
 
-// تقديم الواجهات
-app.use(express.static(path.join(__dirname, 'public')));
-app.get('/', (req,res)=>res.redirect('/display.html'));
-app.get('/display', (req,res)=>res.redirect('/display.html'));
-app.get('/exam', (req,res)=>res.redirect('/examiner.html'));
-
-// APIs مساعدة
-app.get('/api/ips', (req,res)=>res.json({ ips: getIPs(), port: PORT }));
-
+// ---------------------- تشغيل ----------------------
+const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
   console.log(`Queue server running on http://localhost:${PORT}`);
   console.log(`Exam code (EXAM_CODE): ${EXAM_CODE}`);
-  console.log('IPs:', getIPs().map(ip=>`http://${ip}:${PORT}/exam`).join(' , '));
 });
