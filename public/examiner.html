@@ -29,4 +29,101 @@ textarea{min-height:70px}
     <h2>تعريف الفاحص</h2>
     <div class="row"><label>اسم الفاحص</label><input id="examinerName" placeholder="اسمك"></div>
     <div class="row"><label>كود الفاحص (من المدير)</label><input id="examCode" placeholder="1234"></div>
-    <
+    <div class="actions"><button id="btnSaveProfile" class="btn ok">حفظ</button></div>
+    <div id="status" class="status"></div>
+    <small>يُستخدم الاسم لتوقيع الملاحظات، والكود للتحقق من الصلاحية.</small>
+  </div>
+
+  <div class="card">
+    <h2>نداء تلميذ</h2>
+    <div class="row"><label>رقم اللجنة</label><input id="inpCommittee" type="number" min="1"></div>
+    <div class="row"><label>النوع</label>
+      <select id="selGender">
+        <option value="MEN">MEN / رجال</option>
+        <option value="WOMEN">WOMEN / نساء</option>
+      </select>
+    </div>
+    <div class="row"><label>رقم التلميذ</label><input id="inpStudent" type="number" min="1"></div>
+    <div class="actions">
+      <button id="btnCall"  class="btn">نداء</button>
+      <button id="btnClear" class="btn danger">مسح المركز</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>الغياب</h2>
+    <div class="row"><label>إضافة رقم</label><input id="absNumberAdd" type="number" min="0" step="1" placeholder="مثال: 101"></div>
+    <div class="actions"><button id="btnAbsAdd" class="btn ok">إضافة للغياب</button></div>
+    <hr>
+    <div class="row"><label>حذف رقم</label><input id="absNumberDel" type="number" min="0" step="1" placeholder="مثال: 101"></div>
+    <div class="actions"><button id="btnAbsRemove" class="btn danger">مسح الرقم</button></div>
+  </div>
+
+  <div class="card">
+    <h2>إرسال ملاحظة</h2>
+    <div class="row"><label>الملاحظة</label><textarea id="noteText" placeholder="اكتب الملاحظة هنا..."></textarea></div>
+    <div class="actions"><button id="btnNoteSend" class="btn ok">إرسال الملاحظة</button></div>
+  </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const setStatus=(t,type='ok')=>{
+    const el=$('status'); el.textContent=t; el.className='status '+(type==='ok'?'ok':'err'); el.style.display='block';
+  };
+  const socket = io();
+  function getProfile(){ return { name:localStorage.getItem('examiner_name')||'', code:localStorage.getItem('exam_code')||'' }; }
+  function saveProfile(nm,cd){ localStorage.setItem('examiner_name', nm||''); localStorage.setItem('exam_code', cd||''); }
+
+  // تحميل المخزن
+  window.addEventListener('load', ()=>{
+    $('examinerName').value = localStorage.getItem('examiner_name')||'';
+    $('examCode').value     = localStorage.getItem('exam_code')||'';
+  });
+
+  $('btnSaveProfile').onclick=()=>{
+    const nm=$('examinerName').value.trim(), cd=$('examCode').value.trim();
+    if(!nm||!cd){ setStatus('أدخل الاسم والكود','err'); return; }
+    saveProfile(nm,cd); setStatus('تم الحفظ','ok');
+  };
+
+  $('btnCall').onclick=()=>{
+    const prof=getProfile(); if(!prof.name||!prof.code){ setStatus('أدخل الاسم والكود ثم احفظ','err'); return; }
+    const g=$('selGender').value;
+    const s=parseInt(($('inpStudent').value||'').trim(),10);
+    const c=parseInt(($('inpCommittee').value||'').trim(),10);
+    if(!s||!c){ setStatus('أدخل رقم التلميذ واللجنة','err'); return; }
+    socket.emit('exam:call',{ gender:g, student:s, committee:c, code:prof.code });
+    setStatus('تم إرسال النداء','ok');
+  };
+
+  $('btnClear').onclick=()=>{
+    const prof=getProfile(); if(!prof.code){ setStatus('أدخل الكود ثم احفظ','err'); return; }
+    socket.emit('exam:clear',{ code:prof.code });
+    setStatus('تم مسح المركز','ok');
+  };
+
+  $('btnAbsAdd').onclick=()=>{
+    const prof=getProfile(); if(!prof.code){ setStatus('أدخل الكود ثم احفظ','err'); return; }
+    socket.emit('exam:abs:add',{ gender:$('selGender').value, number:$('absNumberAdd').value, code:prof.code });
+    setStatus('تم إضافة غياب','ok');
+  };
+
+  $('btnAbsRemove').onclick=()=>{
+    const prof=getProfile(); if(!prof.code){ setStatus('أدخل الكود ثم احفظ','err'); return; }
+    socket.emit('exam:abs:remove',{ gender:$('selGender').value, number:$('absNumberDel').value, code:prof.code });
+    setStatus('تم حذف رقم الغياب','ok');
+  };
+
+  $('btnNoteSend').onclick=()=>{
+    const prof=getProfile(); if(!prof.code){ setStatus('أدخل الكود ثم احفظ','err'); return; }
+    socket.emit('exam:note',{ text:$('noteText').value, code:prof.code });
+    setStatus('تم إرسال الملاحظة','ok');
+  };
+})();
+</script>
+</body>
+</html>
