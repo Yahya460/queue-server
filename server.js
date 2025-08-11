@@ -1,8 +1,8 @@
 // server.js
-const path = require('path');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -10,107 +10,131 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-// كود التفويض (من Environment في Render)
-const EXAM_CODE = process.env.EXAM_CODE || '1234';
+// ====== الإعدادات ======
+let EXAM_CODE  = process.env.EXAM_CODE  || '1234';
+const ADMIN_CODE = process.env.ADMIN_CODE || '9999';
 
-// يقدم مجلد public كملفات ثابتة
+// ====== الحالة في الذاكرة ======
+let callsMen = [];     // [{student, committee, ticket, at}]
+let callsWomen = [];   // [{...}]
+let noteText = '';
+let absents  = { MEN: [], WOMEN: [] };
+
+const MAX_LIST = 12;
+
+// ====== تقديم ملفات الواجهة ======
 app.use(express.static(path.join(__dirname, 'public')));
 
-// مسارات مختصرة للصفحات (عشان /display و /exam تشتغل)
-app.get('/', (req, res) => {
+// صفحة افتراضية لعرض الشاشة
+app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'display.html'));
 });
-app.get('/display', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'display.html'));
-});
-app.get('/exam', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'examiner.html'));
-});
 
-// --------------------------------- أدوات مساعدة ---------------------------------
-function normGender(g) {
-  // توحيد النوع: يقبل MEN/رجال/WOMEN/نساء ويحوّلها لقيم قياسية
-  g = (g || '').toString().trim().toUpperCase();
-  if (g.includes('WOM') || g.includes('نس')) return 'WOMEN';
-  return 'MEN';
+// ====== أدوات مساعدة ======
+function mkTicket(gender, student) {
+  const p = (gender === 'MEN') ? 'A' : 'C';
+  return p + String(student).padStart(3, '0');
 }
-function toInt(v, def = 0) {
-  const n = parseInt(v, 10);
-  return Number.isFinite(n) ? n : def;
+function trimList(arr) {
+  if (arr.length > MAX_LIST) arr.splice(0, arr.length - MAX_LIST);
 }
 
-// --------------------------------- Socket.IO ---------------------------------
+// ====== Socket.IO ======
 io.on('connection', (socket) => {
-  console.log('socket connected', socket.id);
+  // أرسل الحالة الحالية للعميل الجديد
+  socket.emit('display:init', {
+    men: callsMen,
+    women: callsWomen,
+    note: noteText,
+    abs: absents,
+    examCode: EXAM_CODE
+  });
 
-  // نداء تلميذ
-  socket.on('exam:call', (payload = {}) => {
-    try {
-      const code = (payload.code || '').toString().trim();
-      if (code !== EXAM_CODE) {
-        console.log('call: invalid code');
-        return;
-      }
-      const gender = normGender(payload.gender);
-      const student = toInt(payload.student);
-      const committee = toInt(payload.committee);
-      if (!student || !committee) return;
+  // ===== النداء =====
+  socket.on('exam:call', ({ gender, student, committee, code }) => {
+    if (code !== EXAM_CODE) return;
+    const g = (gender === 'WOMEN') ? 'WOMEN' : 'MEN';
+    const s = parseInt(student, 10);
+    const c = parseInt(committee, 10);
+    if (!Number.isFinite(s) || !Number.isFinite(c)) return;
 
-      const msg = { gender, student, committee, at: Date.now() };
+    const ticket = mkTicket(g, s);
+    const item = { student: s, committee: c, ticket, at: Date.now() };
 
-      // البث لشاشة العرض
-      io.emit('exam:called', msg);           // عام
-      io.emit(`exam:called:${gender}`, msg); // حسب النوع (احتياطي)
-
-      console.log('CALL:', msg);
-    } catch (e) {
-      console.error('exam:call error', e);
+    if (g === 'MEN') {
+      callsMen.push(item); trimList(callsMen);
+    } else {
+      callsWomen.push(item); trimList(callsWomen);
     }
+    io.emit('display:call', { gender: g, ...item });
   });
 
-  // مسح القوائم
-  socket.on('exam:clear', (payload = {}) => {
-    const code = (payload.code || '').toString().trim();
+  // مسح المركز (اختياري)
+  socket.on('exam:clear', ({ code }) => {
     if (code !== EXAM_CODE) return;
-    io.emit('exam:clear');
-    console.log('CLEAR lists');
+    io.emit('display:clear');
   });
 
-  // الغياب - إضافة
-  socket.on('exam:abs:add', (payload = {}) => {
-    const code = (payload.code || '').toString().trim();
+  // ===== الملاحظات =====
+  socket.on('exam:note', ({ text, code }) => {
     if (code !== EXAM_CODE) return;
-    const gender = normGender(payload.gender);
-    const number = toInt(payload.number);
-    if (!number) return;
-    io.emit('exam:abs', { action: 'add', gender, number, at: Date.now() });
-    console.log('ABS ADD:', gender, number);
+    noteText = (text || '').trim();
+    io.emit('note:update', noteText);
   });
 
-  // الغياب - حذف
-  socket.on('exam:abs:remove', (payload = {}) => {
-    const code = (payload.code || '').toString().trim();
+  // ===== الغياب =====
+  socket.on('exam:abs:add', ({ gender, number, code }) => {
     if (code !== EXAM_CODE) return;
-    const gender = normGender(payload.gender);
-    const number = toInt(payload.number);
-    if (!number) return;
-    io.emit('exam:abs', { action: 'remove', gender, number, at: Date.now() });
-    console.log('ABS REMOVE:', gender, number);
+    const g = (gender === 'WOMEN') ? 'WOMEN' : 'MEN';
+    const n = parseInt(number, 10);
+    if (!Number.isFinite(n)) return;
+    if (!absents[g].includes(n)) {
+      absents[g].push(n);
+      absents[g].sort((a,b)=>a-b);
+    }
+    io.emit('abs:update', absents);
   });
 
-  // إرسال ملاحظة
-  socket.on('exam:note', (payload = {}) => {
-    const code = (payload.code || '').toString().trim();
+  socket.on('exam:abs:remove', ({ gender, number, code }) => {
     if (code !== EXAM_CODE) return;
-    const text = (payload.text || '').toString().trim();
-    io.emit('exam:note', { text, at: Date.now() });
-    console.log('NOTE:', text);
+    const g = (gender === 'WOMEN') ? 'WOMEN' : 'MEN';
+    const n = parseInt(number, 10);
+    absents[g] = absents[g].filter(x => x !== n);
+    io.emit('abs:update', absents);
+  });
+
+  // ===== صلاحيات المدير =====
+  socket.on('admin:examcode', ({ admin, value }) => {
+    if (admin !== ADMIN_CODE) return;
+    EXAM_CODE = String(value || '').trim() || EXAM_CODE;
+    io.emit('admin:examcode', EXAM_CODE);
+  });
+
+  socket.on('admin:clearAll', ({ admin }) => {
+    if (admin !== ADMIN_CODE) return;
+    callsMen = []; callsWomen = [];
+    io.emit('display:init', {
+      men: callsMen, women: callsWomen,
+      note: noteText, abs: absents, examCode: EXAM_CODE
+    });
+  });
+
+  socket.on('admin:resetNote', ({ admin }) => {
+    if (admin !== ADMIN_CODE) return;
+    noteText = '';
+    io.emit('note:update', noteText);
+  });
+
+  socket.on('admin:resetAbs', ({ admin }) => {
+    if (admin !== ADMIN_CODE) return;
+    absents = { MEN: [], WOMEN: [] };
+    io.emit('abs:update', absents);
   });
 });
 
-// --------------------------------- تشغيل ---------------------------------
+// ====== التشغيل ======
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
-  console.log(`Queue server running on http://localhost:${PORT}`);
-  console.log(`Exam code (EXAM_CODE): ${EXAM_CODE}`);
+  console.log('Queue server running on http://localhost:' + PORT);
+  console.log('Exam code (EXAM_CODE):', EXAM_CODE);
 });
