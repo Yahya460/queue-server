@@ -1,211 +1,306 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>شاشة العرض — نظام الدور</title>
 <style>
-  :root{
-    --sky:#d6ecff; --bar:#0f77ff; --yellow:#facc15; --text:#001;
-    --panel:#fff; --accent:#1d4ed8;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0; font-family:"Segoe UI", Arial, sans-serif;
-    background:var(--sky); color:var(--text);
-  }
-  .container{
-    display:grid; grid-template-columns: 1fr minmax(580px,2fr) 1fr;
-    gap:12px; min-height:100vh;
-  }
-  .panel{
-    background:#fff; border:1px solid #ccd; display:flex; flex-direction:column;
-  }
-  .bar{ background:var(--bar); color:#fff; padding:10px 14px; font-weight:800; }
-  .list{ flex:1; overflow:auto; padding:10px; }
-  .list ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px;}
-  .list li{ font-weight:800; font-size:28px; padding:6px 10px; border-bottom:1px dashed #ddd;}
-  .center{
-    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-    padding:16px; gap:24px; background:#eaf3ff; border-left:4px solid var(--bar); border-right:4px solid var(--bar);
-  }
-  .logo{ width:120px; margin:8px auto 0; }
-  .big{
-    width:100%; background:#fff; border:2px solid #e1e5ee; padding:22px 12px; display:flex; flex-direction:column; align-items:center;
-  }
-  .big .go{ font-size:20px; margin-bottom:8px; font-weight:700;}
-  .big .num{ font-size:86px; font-weight:900; color:#b91c1c; line-height:1;}
-  .big .committee{ font-size:26px; margin-top:6px; font-weight:700;}
-  .bottom{
-    background:#fff6db; padding:8px 12px; border-top:2px solid #ffd97c; width:100%; text-align:center; font-weight:700;
-  }
-  .status{position:fixed; left:12px; bottom:10px; padding:6px 10px; background:#00000080; color:#fff; border-radius:6px; font-size:13px}
-  .ticker{ white-space:nowrap; overflow:hidden; }
-  .ticker span{ display:inline-block; padding-left:60px; animation:mar 16s linear infinite; }
-  @keyframes mar{ from{transform:translateX(100%)} to{transform:translateX(-100%)} }
-  .abs{ font-size:16px; padding:6px; }
-  .abs b{ color:#b91c1c; }
-  .note{ font-weight:800; color:#1f2937; }
-  .head{
-    position:sticky; top:0; background:#0d47a1; color:#fff; text-align:center; padding:8px; font-weight:800;
-  }
-  .foot{
-    text-align:center; padding:10px; color:#1e293b; font-weight:700; border-top:1px solid #cfd8e3; background:#eef5ff;
-  }
+:root{
+  --sky:#e5f3ff;
+  --bar:#0b5ed7;
+  --yellow:#f9e79f;
+  --accent:#b91c1c; /* أحمر */
+  --panel:#ffffff;
+  --ink:#111;
+  --muted:#666;
+  --line:#d7e6f7;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:var(--sky);
+  color:var(--ink);
+}
+
+/* شريط علوي */
+.topbar{
+  background:var(--bar);
+  color:#fff;
+  text-align:center;
+  padding:.6rem .8rem;
+  font-weight:600;
+  position:sticky;top:0;z-index:3;
+}
+.topbar small{font-weight:400;opacity:.9}
+
+/* تخطيط 3 أعمدة */
+.container{
+  display:grid;
+  grid-template-columns: 260px 1fr 260px;
+  gap:14px;
+  padding:14px;
+  max-width:1200px;
+  margin:auto;
+}
+@media(max-width:1000px){
+  .container{grid-template-columns: 1fr; }
+}
+
+/* لوح جانبي */
+.side{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  min-height:540px;
+}
+.side h3{
+  margin:0;
+  padding:10px 12px;
+  background:#fff;
+  border-bottom:1px solid var(--line);
+  font-size:18px;
+}
+.list{
+  flex:1; padding:10px; overflow:auto;
+}
+.item{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 10px; margin-bottom:6px;
+  border:1px solid var(--line); border-radius:6px; background:#fff;
+  font-weight:600;
+}
+.item .code{font-weight:800; font-size:18px}
+.item .meta{color:var(--muted); font-size:13px}
+
+/* اللوح الأوسط */
+.center{
+  background:#fff;border:1px solid var(--line);
+  border-radius:10px; overflow:hidden; min-height:540px;
+  display:flex; flex-direction:column; align-items:center;
+}
+.center .head{
+  width:100%; padding:12px 16px; border-bottom:1px solid var(--line);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.statusDot{position:fixed;left:10px;bottom:10px;background:#444;color:#fff;
+  padding:6px 10px;border-radius:6px;font-size:12px;opacity:.9}
+
+/* الرسالة والرقم الكبير */
+.msg{
+  padding:12px 16px; width:100%;
+  display:flex; justify-content:space-between; align-items:flex-start;
+  color:#111; font-weight:700;
+}
+.msg .en{font-weight:600}
+
+.big{
+  margin-top:10px; text-align:center; flex:1;
+  width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.barRed{width:160px;height:10px;background:var(--accent);border-radius:6px;margin:10px auto 16px}
+#bigNum{font-size:120px; font-weight:900; letter-spacing:2px; line-height:1}
+.center h1{margin:0 0 6px 0; font-size:34px}
+.gLabel{color:var(--accent); font-weight:800; margin-top:4px}
+
+/* الغياب والملاحظة */
+.band{
+  width:100%; background:#fff4cc; border-top:1px solid var(--line);
+  padding:8px 12px; text-align:center; font-weight:700;
+}
+.marquee{
+  width:100%; overflow:hidden; white-space:nowrap; border-top:1px solid var(--line);
+  background:#fff; padding:8px 0;
+}
+.marquee > div{
+  display:inline-block; padding-right:100%;
+  animation:scroll 18s linear infinite;
+}
+@keyframes scroll{
+  from{transform:translateX(0)}
+  to{transform:translateX(-100%)}
+}
+
+/* ألوان عناوين القوائم */
+.tagMen{color:#0a7}
+.tagWom{color:#a06}
 </style>
 </head>
 <body>
 
-<div class="head">شاشة العرض (PLUS) — يُرجى تفعيل الصوت بنقرة واحدة داخل الصفحة</div>
+<div class="topbar">
+  شاشة العرض <b>(PLUS)</b> — يُرجى تفعيل الصوت بنقرة واحدة داخل الصفحة <small>— ثم إبقاء الصفحة مفتوحة</small>
+</div>
 
 <div class="container">
 
-  <!-- يسار: تم النداء — رجال -->
-  <div class="panel">
-    <div class="bar">MEN / رجال — تم النداء</div>
-    <div class="list"><ul id="list-men"></ul></div>
+  <!-- قائمة رجال -->
+  <div class="side">
+    <h3> MEN / رجال — <span class="tagMen">تم النداء</span> </h3>
+    <div id="menList" class="list"></div>
   </div>
 
-  <!-- وسط -->
-  <div class="panel">
-    <div class="center">
-      <img class="logo" src="/logo.png" onerror="this.style.display='none'">
-      <div class="big">
-        <div class="go">يرجى التوجه لمنطقة الاختبار — Please proceed to the examination area</div>
-        <div class="num" id="big-num">—</div>
-        <div class="committee" id="big-committee">اللجنة —</div>
-      </div>
-      <div class="bottom">
-        <div class="abs"><b>الغياب رجال:</b> <span id="abs-men"></span></div>
-        <div class="abs"><b>الغياب نساء:</b> <span id="abs-women"></span></div>
-        <div class="ticker"><span class="note" id="note-text"></span></div>
-      </div>
+  <!-- اللوح الأوسط -->
+  <div class="center" id="page">
+    <div class="head">
+      <div class="ar">يرجى التوجه لمنطقة الاختبار</div>
+      <div class="en">Please proceed to the examination area</div>
     </div>
-    <div class="foot">معهد السلامة المرورية بصحار — جميع الحقوق محفوظة للرقيب أول يحيى آل عبدالسلام 2025</div>
+
+    <div class="big">
+      <div class="barRed"></div>
+      <div id="bigNum">—</div>
+      <h1>— اللجنة —</h1>
+      <div id="gLabel" class="gLabel">—</div>
+    </div>
+
+    <div class="band" id="absBand">
+      الغياب بـرجال: لا يوجد — الغياب نساء: لا يوجد
+    </div>
+
+    <div class="marquee">
+      <div id="noteTicker">لا توجد ملاحظات…</div>
+    </div>
   </div>
 
-  <!-- يمين: تم النداء — نساء -->
-  <div class="panel">
-    <div class="bar" style="background:var(--yellow); color:#111">WOMEN / نساء — تم النداء</div>
-    <div class="list"><ul id="list-women"></ul></div>
+  <!-- قائمة نساء -->
+  <div class="side">
+    <h3> WOMEN / نساء — <span class="tagWom">تم النداء</span> </h3>
+    <div id="womList" class="list"></div>
   </div>
 
 </div>
 
-<div class="status" id="status">جاري الاتصال…</div>
+<div id="conn" class="statusDot">متصل بالخادم</div>
 
-<!-- أصوات (ضع ملفاتك إن وجدت) -->
-<audio id="audMen" preload="auto"></audio>
-<audio id="audWomen" preload="auto"></audio>
+<!-- أصوات -->
+<audio id="audMen"></audio>
+<audio id="audWom"></audio>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 (function(){
+  const $ = s=>document.querySelector(s);
+  const pad = n => String(n).padStart(3,'0');
+
+  const menList = $('#menList');
+  const womList = $('#womList');
+  const bigNum = $('#bigNum');
+  const gLabel = $('#gLabel');
+  const absBand = $('#absBand');
+  const noteTicker = $('#noteTicker');
+  const conn = $('#conn');
+
+  // قوائم العرض (آخر 12 نداء)
+  const lastMen = [];
+  const lastWom = [];
+  const MAX = 12;
+
+  // الغياب
+  let absMen = [];
+  let absWom = [];
+
+  // الأصوات: إن وُجدت ملفات، ضع المسارات هنا:
+  // $('#audMen').src = '/sounds/men.mp3';
+  // $('#audWom').src = '/sounds/women.mp3';
+
+  // بديل صوتي بسيط عند عدم وجود ملفات
+  function toneShort(freq=880){
+    try{
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type='sine'; o.frequency.value=freq;
+      o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+      o.start(); o.stop(ctx.currentTime + 0.36);
+    }catch(e){}
+  }
+  function playMen(){ const a=$('#audMen'); if(a.src) { a.currentTime=0; a.play().catch(()=>{}); } else { toneShort(700); } }
+  function playWom(){ const a=$('#audWom'); if(a.src) { a.currentTime=0; a.play().catch(()=>{}); } else { toneShort(950); } }
+
+  function renderLists(){
+    menList.innerHTML = lastMen.map(x=>(
+      `<div class="item"><span class="code">${x.code}</span><span class="meta">رجال · اللجنة ${x.c}</span></div>`
+    )).join('');
+    womList.innerHTML = lastWom.map(x=>(
+      `<div class="item"><span class="code">${x.code}</span><span class="meta">نساء · اللجنة ${x.c}</span></div>`
+    )).join('');
+  }
+
+  function renderAbs(){
+    const m = absMen.length ? absMen.join('، ') : 'لا يوجد';
+    const w = absWom.length ? absWom.join('، ') : 'لا يوجد';
+    absBand.textContent = `الغياب بـرجال: ${m} — الغياب نساء: ${w}`;
+  }
+
+  // سوكِت
   const socket = io();
 
-  const st  = document.getElementById('status');
-  const men = document.getElementById('list-men');
-  const wom = document.getElementById('list-women');
-  const bigN= document.getElementById('big-num');
-  const bigC= document.getElementById('big-committee');
-  const absM= document.getElementById('abs-men');
-  const absW= document.getElementById('abs-women');
-  const note= document.getElementById('note-text');
+  socket.on('connect', ()=>{ conn.textContent='متصل بالخادم'; conn.style.background='#2e7d32'; });
+  socket.on('disconnect', ()=>{ conn.textContent='انقطع الاتصال'; conn.style.background='#c62828'; });
 
-  const audMen = document.getElementById('audMen');
-  const audWom = document.getElementById('audWomen');
+  // حدث النداء من السيرفر
+  socket.on('exam:called', (p)=>{
+    // p = { gender:'MEN'|'WOMEN', student:number, committee:number }
+    const isMen = (String(p.gender||'').toUpperCase() === 'MEN');
+    const prefix = isMen ? 'A' : 'C';
+    const code = `${prefix}${pad(p.student||0)}`;
+    bigNum.textContent = code;
+    gLabel.textContent = isMen ? 'رجال' : 'نساء';
 
-  // يمكن ضبط مسارات الصوت هنا إن كانت لديك ملفات
-  // audMen.src = '/sounds/men.mp3';
-  // audWom.src = '/sounds/women.mp3';
-
-  let soundUnlocked = false;
-  function unlockSound(){
-    if(soundUnlocked) return;
-    [audMen, audWom].forEach(a=>{
-      try{ a.play().then(()=>{ a.pause(); a.currentTime=0; soundUnlocked=true; })
-           .catch(()=>{}); }catch(_){}
-    });
-  }
-  document.addEventListener('click', unlockSound, {once:true, capture:true});
-  document.addEventListener('touchstart', unlockSound, {once:true, capture:true});
-
-  function showStatus(t){ st.textContent = t; }
-
-  socket.on('connect', ()=> showStatus('متصل بالخادم'));
-  socket.on('disconnect', ()=> showStatus('انقطع الاتصال — سيُعاد المحاولة'));
-  socket.on('connect_error', ()=> showStatus('فشل الاتصال — تأكد من الإنترنت'));
-
-  function normGender(g){
-    g = (g||'').toString().toUpperCase();
-    if(g.includes('WOM') || g.includes('نس')) return 'WOMEN';
-    return 'MEN';
-  }
-  function pushItem(ul, text){
-    if(!ul) return;
-    const li = document.createElement('li');
-    li.textContent = text;
-    ul.prepend(li);
-    while(ul.children.length > 12) ul.lastChild.remove();
-  }
-  function showCenter(student, committee){
-    bigN.textContent = student ?? '—';
-    bigC.textContent = committee ? `اللجنة ${committee}` : 'اللجنة —';
-  }
-  function playTone(g){
-    try{
-      if(g==='MEN' && audMen) audMen.play();
-      if(g==='WOMEN' && audWom) audWom.play();
-    }catch(_){}
-  }
-
-  // الحدث القياسي الجديد
-  socket.on('exam:called', ({gender, student, committee})=>{
-    const g = normGender(gender);
-    showCenter(student, committee);
-    const code = `${g==='MEN' ? 'A' : 'C'}${String(student).padStart(3,'0')}`;
-    if(g==='MEN') pushItem(men, code); else pushItem(wom, code);
-    playTone(g);
+    // حدّث القوائم
+    const entry = { code, c: p.committee||'-' };
+    if(isMen){
+      lastMen.unshift(entry);
+      if(lastMen.length>MAX) lastMen.pop();
+      playMen();
+    } else {
+      lastWom.unshift(entry);
+      if(lastWom.length>MAX) lastWom.pop();
+      playWom();
+    }
+    renderLists();
   });
 
-  // توافقية لو كان هناك عميل يرسل الحدث القديم "play"
-  socket.on('play', (p={})=>{
-    const g = normGender(p.gender || p.g);
-    const student   = parseInt(p.student ?? p.s ?? p.num, 10) || 0;
-    const committee = parseInt(p.committee ?? p.c, 10) || 0;
-    if(!student || !committee) return;
-    showCenter(student, committee);
-    const code = `${g==='MEN' ? 'A' : 'C'}${String(student).padStart(3,'0')}`;
-    if(g==='MEN') pushItem(men, code); else pushItem(wom, code);
-    playTone(g);
-  });
-
-  // مسح القوائم
+  // مسح الرقم الكبير (لا نمسح القوائم)
   socket.on('exam:clear', ()=>{
-    men.innerHTML=''; wom.innerHTML='';
-    showCenter('—', null);
-    absM.textContent=''; absM.dataset.list='';
-    absW.textContent=''; absW.dataset.list='';
-    note.textContent='';
+    bigNum.textContent = '—';
+    gLabel.textContent = '—';
+  });
+
+  // ملاحظة
+  socket.on('exam:note', (p)=>{
+    const t = (p && p.text || '').trim();
+    noteTicker.textContent = t ? t : '—';
   });
 
   // الغياب
-  socket.on('exam:abs', ({action, gender, number})=>{
-    const g = normGender(gender);
-    const el = (g==='MEN') ? absM : absW;
-    const set = new Set((el.dataset.list||'').split(',').filter(Boolean));
-    if(action==='add') set.add(String(number)); else set.delete(String(number));
-    el.dataset.list = Array.from(set).join(',');
-    el.textContent  = Array.from(set).join('  •  ');
+  socket.on('exam:abs:add', (p)=>{
+    const g = (p.gender||'').toUpperCase();
+    const num = String(p.number||'').trim();
+    if(!num) return;
+    if(g==='MEN'){ if(!absMen.includes(num)) absMen.push(num); }
+    else if(g==='WOMEN'){ if(!absWom.includes(num)) absWom.push(num); }
+    renderAbs();
   });
 
-  // الملاحظة
-  socket.on('exam:note', ({text})=>{
-    note.textContent = text || '';
+  socket.on('exam:abs:remove', (p)=>{
+    const g = (p.gender||'').toUpperCase();
+    const num = String(p.number||'').trim();
+    if(g==='MEN'){ absMen = absMen.filter(x=>x!==num); }
+    else if(g==='WOMEN'){ absWom = absWom.filter(x=>x!==num); }
+    renderAbs();
   });
 
-  // لوج أي حدث (يساعدنا في التشخيص)
-  socket.onAny((ev, ...args)=>{ console.log('[DISPLAY EVENT]', ev, ...args); });
+  // للتأكد من وصول الأحداث يمكنك فتح Console وسترى التالي:
+  socket.onAny((ev, ...a)=>{ /* console.log('[DISPLAY EV]', ev, ...a); */ });
+
+  // نقرة لتفعيل الصوت في بعض المتصفحات
+  document.addEventListener('click', ()=>{ try{ playMen(); }catch(e){} }, {once:true});
 
 })();
 </script>
