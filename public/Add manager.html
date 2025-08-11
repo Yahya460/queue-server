@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لوحة المدير</title>
+<style>
+:root{--bar:#0b5ed7;--bg:#f5f7fb}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg)}
+.wrap{max-width:680px;margin:20px auto;padding:0 12px}
+.card{background:#fff;border:1px solid #eee;border-radius:10px;padding:16px;margin-bottom:16px}
+h2{margin:0 0 10px}
+.row{display:grid;grid-template-columns:160px 1fr;gap:8px;align-items:center;margin-bottom:10px}
+input{width:100%;border:1px solid #ddd;border-radius:8px;padding:10px}
+.btn{background:var(--bar);color:#fff;border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.badge{display:inline-block;background:#d1e7dd;border:1px solid #a3cfbb;color:#0a3622;border-radius:8px;padding:6px 10px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h2>تسجيل دخول المدير</h2>
+    <div class="row"><label>ADMIN_CODE</label><input id="admin" placeholder="9999"></div>
+    <div class="row"><label>EXAM_CODE الحالي</label><input id="exam" placeholder="1234"></div>
+    <div class="actions">
+      <button id="btnSetExam" class="btn">تحديث EXAM_CODE</button>
+      <button id="btnClearAll" class="btn">مسح قوائم النداء</button>
+      <button id="btnResetNote" class="btn">مسح الملاحظة</button>
+      <button id="btnResetAbs" class="btn">مسح الغياب</button>
+    </div>
+    <div id="info" class="badge">الحالة ستظهر هنا…</div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const $ = s => document.getElementById(s);
+function info(t){ $('info').textContent = t; }
+
+socket.on('display:init', ({examCode}) => { $('exam').value = examCode; });
+socket.on('admin:examcode', (v)=>{ $('exam').value=v; info('تم تحديث EXAM_CODE إلى: '+v); });
+
+$('btnSetExam').onclick=()=> socket.emit('admin:examcode', { admin:$('admin').value.trim(), value:$('exam').value.trim() });
+$('btnClearAll').onclick=()=> socket.emit('admin:clearAll', { admin:$('admin').value.trim() });
+$('btnResetNote').onclick=()=> socket.emit('admin:resetNote', { admin:$('admin').value.trim() });
+$('btnResetAbs').onclick =()=> socket.emit('admin:resetAbs',  { admin:$('admin').value.trim() });
+</script>
+</body>
+</html>
