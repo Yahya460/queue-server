@@ -110,5 +110,44 @@
   socket.on('play', (p)=>{ if(!soundReady) return; try{ if(p && p.gender==='men'){ audMen.currentTime=0; audMen.play(); } else { audWomen.currentTime=0; audWomen.play(); } }catch(e){} });
 })();
 </script>
+  <script>
+/* Patch: تفعيل الصوت عند أول تفاعل (نقرة/لمسة/زر) حتى لو زر "تفعيل الصوت" لم يستجب */
+(function(){
+  function enable(){
+    try{
+      // أنشئ/استأنف AudioContext
+      if (window._audioCtx) {
+        if (window._audioCtx.state === 'suspended') window._audioCtx.resume();
+      } else {
+        window._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      // نبضة صامتة قصيرة تفتح الصوت في بعض المتصفحات (iOS/Safari)
+      const ctx = window._audioCtx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.value = 0.00001;
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      setTimeout(()=>{ try{osc.stop();}catch(e){} }, 60);
+    }catch(e){}
+    // إخفاء النافذة/التنبيه إن وُجد
+    var modal = document.getElementById('sound-modal') || document.querySelector('.sound-modal');
+    if (modal) modal.style.display = 'none';
+    localStorage.setItem('sound_enabled','1');
+    // أوقف المستمعين بعد النجاح
+    document.removeEventListener('click', onAny, true);
+    document.removeEventListener('touchstart', onAny, true);
+    document.removeEventListener('keydown', onAny, true);
+  }
+  function onAny(){ enable(); }
+  // فعّل بالصغطة على الزر إن كان عندك زر يستدعي هذه الدالة
+  window.enableDisplaySound = enable;
+  // أو فعّل بأي تفاعل من المستخدم
+  document.addEventListener('click', onAny, true);
+  document.addEventListener('touchstart', onAny, true);
+  document.addEventListener('keydown', onAny, true);
+})();
+</script>
+
 </body>
 </html>
