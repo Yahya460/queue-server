@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>صفحة المدير</title>
+  <style>
+    :root {
+      --bg:#f6f8fb; --card:#fff; --bar:#0a7; --red:#d33; --text:#222;
+      --muted:#666; --btn:#0a7; --btnh:#087; --border:#e3e7ee;
+    }
+    *{box-sizing:border-box} body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:920px;margin:28px auto;padding:0 16px}
+    h1{font-size:20px;margin:0 0 12px;color:#0a558c}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 16px 8px;margin-bottom:16px;box-shadow:0 2px 4px rgba(0,0,0,.04)}
+    .row{display:grid;grid-template-columns:140px 1fr;gap:8px;align-items:center;margin-bottom:10px}
+    label{color:var(--muted);font-size:14px}
+    input,select,textarea{width:100%;border:1px solid #d4d9e3;border-radius:8px;padding:10px;font-size:15px}
+    textarea{min-height:80px;resize:vertical}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .btn{background:var(--btn);color:#fff;border:0;border-radius:8px;padding:10px 14px;cursor:pointer}
+    .btn:hover{background:var(--btnh)}
+    .danger{background:var(--red)} .danger:hover{filter:brightness(.95)}
+    .status{display:none;margin-top:8px;padding:10px;border-radius:8px;font-size:14px}
+    .ok{background:#eafaf2;color:#096} .err{background:#ffecec;color:#c00}
+    .bar{height:5px;background:linear-gradient(90deg,#0a7,#0af);border-radius:6px;margin:12px 0}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>لوحة المدير</h1>
+    <div class="bar"></div>
+
+    <div class="card">
+      <div class="row">
+        <label>EXAM_CODE</label>
+        <input id="examCode" placeholder="مثال: 1234" />
+      </div>
+      <div class="actions">
+        <button class="btn" id="btnSaveExam">حفظ الكود</button>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h1>نداء تجريبي</h1>
+      <div class="row">
+        <label>النوع</label>
+        <select id="g">
+          <option value="MEN">MEN / رجال</option>
+          <option value="WOMEN">WOMEN / نساء</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>رقم التلميذ</label>
+        <input id="s" placeholder="مثال: A101 أو 55" />
+      </div>
+      <div class="row">
+        <label>رقم اللجنة</label>
+        <input id="c" type="number" min="1" value="1" />
+      </div>
+      <div class="actions">
+        <button class="btn" id="btnCall">إرسال نداء</button>
+        <button class="btn danger" id="btnClear">مسح القوائم</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h1>ملاحظات</h1>
+      <div class="row">
+        <label>النص</label>
+        <textarea id="note"></textarea>
+      </div>
+      <div class="actions">
+        <button class="btn" id="btnNote">إرسال ملاحظة</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h1>الغياب</h1>
+      <div class="row">
+        <label>النوع</label>
+        <select id="ag">
+          <option value="MEN">MEN / رجال</option>
+          <option value="WOMEN">WOMEN / نساء</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>الرقم</label>
+        <input id="abs" placeholder="رقم التلميذ" />
+      </div>
+      <div class="actions">
+        <button class="btn" id="btnAbsAdd">إضافة غياب</button>
+        <button class="btn danger" id="btnAbsRemove">حذف غياب</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    (function(){
+      const $=id=>document.getElementById(id);
+      const setStatus=(t,type='ok')=>{
+        const el=$('status'); el.textContent=t; el.className='status '+type; el.style.display='block';
+        setTimeout(()=>{ el.style.display='none'; }, 2500);
+      };
+
+      const socket = io();
+
+      function getExam(){ return localStorage.getItem('exam_code') || ''; }
+      function setExam(v){ localStorage.setItem('exam_code', v||''); }
+
+      // تحميل الكود المحفوظ
+      $('examCode').value = getExam();
+
+      $('btnSaveExam').onclick = ()=>{
+        setExam( $('examCode').value.trim() );
+        setStatus('تم الحفظ','ok');
+      };
+
+      $('btnCall').onclick = ()=>{
+        const code = getExam();
+        const gender = $('g').value;
+        const student = ($('s').value || '').trim();
+        const committee = parseInt(($('c').value || '1'),10) || 1;
+        if(!code || !student){ setStatus('أدخل EXAM_CODE والرقم','err'); return; }
+        socket.emit('exam:call', { gender, student, committee, code });
+        setStatus('تم إرسال النداء','ok');
+      };
+
+      $('btnClear').onclick = ()=>{
+        socket.emit('exam:clear', {});
+        setStatus('تم مسح القوائم','ok');
+      };
+
+      $('btnNote').onclick = ()=>{
+        const code = getExam();
+        const text = ($('note').value || '').trim();
+        if(!code || !text){ setStatus('أدخل EXAM_CODE والنص','err'); return; }
+        socket.emit('exam:note', { text, code, author: 'المدير' });
+        setStatus('تم إرسال الملاحظة','ok');
+      };
+
+      $('btnAbsAdd').onclick = ()=>{
+        const code = getExam();
+        const gender = $('ag').value;
+        const number = ($('abs').value || '').trim();
+        if(!code || !number){ setStatus('أدخل EXAM_CODE والرقم','err'); return; }
+        socket.emit('exam:abs:add', { gender, number, code });
+        setStatus('تم إضافة الغياب','ok');
+      };
+
+      $('btnAbsRemove').onclick = ()=>{
+        const code = getExam();
+        const gender = $('ag').value;
+        const number = ($('abs').value || '').trim();
+        if(!code || !number){ setStatus('أدخل EXAM_CODE والرقم','err'); return; }
+        socket.emit('exam:abs:remove', { gender, number, code });
+        setStatus('تم حذف الغياب','ok');
+      };
+    })();
+  </script>
+</body>
+</html>
